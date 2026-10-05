@@ -3,22 +3,48 @@
 MAT2007 — Introduction to Programming, final project.
 
 **Research question:** has the lap-time gap between the fastest and the slowest
-car on the Formula 1 grid become smaller between 1996 and 2024?
+car on the Formula 1 grid become smaller between 1996 and 2024 — and if so, is
+it because the cars converged, or because the slowest teams stopped entering?
 
-For every race, the script takes the fastest lap each constructor set, and
-measures the relative difference between the slowest and the fastest of those:
+For every race the script takes the fastest lap each constructor set, and forms
+two numbers from them:
 
 ```
-gap [%] = 100 * (slowest best lap - fastest best lap) / fastest best lap
+full gap [%]  = 100 * (slowest best lap   - fastest best lap) / fastest best lap
+trimmed  [%]  = 100 * (2nd slowest best lap - fastest best lap) / fastest best lap
 ```
 
-Season medians of this quantity are fitted with a straight line to obtain the
-trend and its uncertainty.
+The full gap measures how wide the grid is. The trimmed gap ignores the single
+slowest constructor, so it measures how close the rest of the field is. If both
+fall, the cars have converged; if only the full gap falls, the change is in who
+enters the championship, not in the machinery.
+
+Season medians of both quantities are compared across eras and fitted with
+straight lines.
+
+## Result
+
+The gap is **not** a smooth function of time. A linear fit over the whole period
+gives a slope of −0.024 ± 0.026 percentage points per year, only 0.9σ from zero,
+with χ²/ndf = 14.4. The reason is that the gap *peaks* in 2010–2016, the seasons
+when HRT, Virgin/Marussia and Lotus/Caterham were on the grid far off the pace.
+
+Comparing eras of similar grid composition:
+
+| Mean season gap | 1996–2008 | 2010–2016 | 2017–2024 |
+| --- | --- | --- | --- |
+| Whole field | 4.00 ± 0.08 % | 4.88 ± 0.13 % | 3.39 ± 0.10 % |
+| Slowest team excluded | 3.20 ± 0.06 % | 3.74 ± 0.10 % | 2.98 ± 0.08 % |
+
+The whole field narrowed by 0.61 ± 0.13 % (4.7σ) between 1996–2008 and
+2017–2024, but only 0.22 ± 0.11 % (2.1σ) of that survives when the slowest car
+is removed. Most of the convergence is the disappearance of the slow tail rather
+than the remaining cars growing alike.
 
 ## Dataset
 
 [Formula 1 World Championship (1950–2024)](https://www.kaggle.com/datasets/rohanrao/formula-1-world-championship-1950-2020)
-on Kaggle, derived from the Ergast database. About 40 MB.
+on Kaggle, derived from the Ergast database.
 
 Download the dataset, unzip it, and place these four files in a `data/` folder
 next to the script:
@@ -30,10 +56,16 @@ data/races.csv
 data/constructors.csv
 ```
 
-No manual cleaning is needed — the script filters invalid lap times, opening
-laps, and cars that completed too few laps to have a meaningful best lap.
+The data folder is deliberately not committed — it is far too large for a
+repository, and the link above is where to get it.
+
+No manual cleaning is needed. The script discards lap times outside 30–300 s,
+drops opening laps (they start from a standstill), and ignores any constructor
+that completed fewer than 20 timed laps in a race, so that a car which crashed
+early cannot contribute a meaningless "best lap". 542 races survive these cuts.
+
 Lap-by-lap timing only exists from 1996 onwards, which is why the analysis does
-not go back to 1950.
+not reach back to the first championship in 1950.
 
 ## Dependencies
 
@@ -46,7 +78,7 @@ pip install pandas numpy matplotlib
 ## How to run
 
 ```bash
-python3 f1_gap_analysis.py --data-dir data --out-dir figures
+python f1_gap_analysis.py --data-dir data --out-dir figures
 ```
 
 Options:
@@ -63,18 +95,17 @@ Runtime is roughly 10–20 seconds on a laptop.
 
 ## Output
 
-Written to the output folder:
+Era averages, the era comparison and three linear fits (whole period, 1996–2009
+and 2012–2024) are printed to the terminal. The files written are:
 
-- `gap_trend.png` — gap per race, season medians, and the fitted trend (Figure 1 of the report)
-- `gap_eras.png` — mean gap of the first five seasons versus the last five
-- `race_gaps.csv` — the gap, fastest team and slowest team for every race
-- `season_gaps.csv` — season medians and their uncertainties
-
-The fitted slope, its uncertainty and its significance are printed to the
-terminal.
+- `gap_trend.png` — season medians of both metrics, with the new-team era shaded (Figure 1 of the report)
+- `gap_eras.png` — the 1996–2008 versus 2017–2024 comparison as two bars
+- `race_gaps.csv` — both gaps, plus the fastest and slowest team, for every race
+- `season_gaps.csv` — season medians of the full gap, with uncertainties
+- `season_gaps_trimmed.csv` — the same for the trimmed gap
 
 ## Report
 
 `report.tex` is the LaTeX source of the two-page report; compile it with
-pdfLaTeX on Overleaf. It expects `figures/gap_trend.png` to exist, so run the
-script first.
+pdfLaTeX on Overleaf. It needs `gap_trend.png` in the same folder, so run the
+script first. `report.pdf` is the compiled version.
