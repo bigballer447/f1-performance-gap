@@ -2,11 +2,11 @@
 
 MAT2007 — Introduction to Programming, final project.
 
-**Research question:** has the lap-time gap between the fastest and the slowest
-car on the Formula 1 grid become smaller between 1996 and 2024 — and if so, is
+**Research question:** Has the lap-time gap between the fastest and the slowest
+car on the Formula 1 grid become smaller between 1996 and 2024? If yes, is
 it because the cars converged, or because the slowest teams stopped entering?
 
-For every race the script takes the fastest lap each constructor set, and forms
+For every race, the script takes the fastest lap each constructor set, and forms
 two numbers from them:
 
 ```
