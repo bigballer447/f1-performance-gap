@@ -1,22 +1,15 @@
-"""
-Has the performance gap between the fastest and slowest Formula 1 cars shrunk?
 
-Two metrics
------------
-For every race from 1996 onwards (the first season with lap-by-lap timing in the
-Ergast database) we take, for each constructor, the single fastest lap that any
-of its cars set in that race.  From those we build two numbers per race:
+From 1996 onwards take for each constructor, the single fastest lap that any
+of its cars set in that race.  Using them, build two numbers per race:
 
     full gap [%]  = 100 * (slowest best lap - fastest best lap) / fastest
     trimmed [%]   = the same, but ignoring the single slowest constructor
 
-The full gap answers "how wide is the grid?".  The trimmed gap answers "how
-close are the cars once the one backmarker is set aside?".  Comparing the two
-separates a change in who enters the championship from a change in the cars.
-
+The full gap answers "how wide is the grid?"
+The trimmed gap answers "how close are the cars once the one backmarker is set aside?"
 Races are aggregated into seasons with the median (robust against wet races and
-safety-car events).  Because the field spread is NOT a straight line in time --
-three new teams entered in 2010 and left by 2017 -- the script reports era
+safety-car events).  Because the field spread is not a straight line in time, 
+three new teams entered in 2010 and left by 2017, the script reports era
 averages as well as linear fits over the whole period and over sub-periods.
 
 Data
@@ -43,17 +36,13 @@ matplotlib.use("Agg")  # write files instead of opening a window
 import matplotlib.pyplot as plt
 
 
-# Eras used for the headline comparison.  2010-2016 is left out on purpose:
-# that is the stretch when HRT, Virgin/Marussia and Lotus/Caterham were on the
-# grid, and including it would compare different championships.
+
 ERA_EARLY = (1996, 2008)
 ERA_NEW_TEAMS = (2010, 2016)
 ERA_LATE = (2017, 2024)
 
 
-# --------------------------------------------------------------------------- #
 # 1. Loading
-# --------------------------------------------------------------------------- #
 def load_data(data_dir: Path) -> dict:
     """Read the four CSV files we need and return them in a dictionary."""
     needed = {
@@ -73,9 +62,7 @@ def load_data(data_dir: Path) -> dict:
     return tables
 
 
-# --------------------------------------------------------------------------- #
 # 2. Cleaning
-# --------------------------------------------------------------------------- #
 def build_lap_table(tables: dict, start_year: int, end_year: int) -> pd.DataFrame:
     """Join laps to constructors and seasons, and drop what we cannot use."""
     laps = tables["lap_times"]
@@ -93,7 +80,7 @@ def build_lap_table(tables: dict, start_year: int, end_year: int) -> pd.DataFram
         constructors.rename(columns={"name": "constructor"}), on="constructorId", how="inner"
     )
 
-    # Season window: lap times only exist from 1996 onwards.
+    # lap times only exist from 1996 onwards.
     laps = laps[(laps["year"] >= start_year) & (laps["year"] <= end_year)]
 
     # A handful of rows have missing or absurd times; a Formula 1 lap is never
@@ -108,9 +95,8 @@ def build_lap_table(tables: dict, start_year: int, end_year: int) -> pd.DataFram
     return laps
 
 
-# --------------------------------------------------------------------------- #
 # 3. The metrics
-# --------------------------------------------------------------------------- #
+
 def constructor_best_laps(laps: pd.DataFrame, min_laps: int) -> pd.DataFrame:
     """Fastest lap per constructor per race, for constructors that really raced."""
     grouped = laps.groupby(["year", "raceId", "name", "constructor"])
@@ -130,7 +116,7 @@ def race_gaps(best: pd.DataFrame, min_constructors: int = 5) -> pd.DataFrame:
     rows = []
     for (year, race_id, race_name), group in best.groupby(["year", "raceId", "name"]):
         if len(group) < min_constructors:
-            continue  # attrition destroyed the field; not a fair comparison
+            continue
 
         times = group["best_ms"].sort_values().to_numpy()
         fastest = times[0]
@@ -165,9 +151,7 @@ def season_summary(gaps: pd.DataFrame, column: str) -> pd.DataFrame:
     return out
 
 
-# --------------------------------------------------------------------------- #
 # 4. Trends and era averages
-# --------------------------------------------------------------------------- #
 def fit_trend(seasons: pd.DataFrame, first_year=None, last_year=None) -> dict:
     """Weighted straight-line fit of the season medians against the year."""
     data = seasons
@@ -236,9 +220,7 @@ def compare(first: dict, second: dict) -> dict:
     }
 
 
-# --------------------------------------------------------------------------- #
 # 5. Plots
-# --------------------------------------------------------------------------- #
 def plot_trend(full, trimmed, out_path: Path) -> None:
     """Season medians of both metrics, with the new-teams era shaded."""
     fig, ax = plt.subplots(figsize=(9, 5.5))
@@ -296,9 +278,7 @@ def plot_eras(early, late, delta, out_path: Path) -> None:
     plt.close(fig)
 
 
-# --------------------------------------------------------------------------- #
 # 6. Main
-# --------------------------------------------------------------------------- #
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
