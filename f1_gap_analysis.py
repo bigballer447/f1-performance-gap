@@ -1,9 +1,9 @@
-
+"""
 From 1996 onwards take for each constructor, the single fastest lap that any
 of its cars set in that race.  Using them, build two numbers per race:
 
-    full gap [%]  = 100 * (slowest best lap - fastest best lap) / fastest
-    trimmed [%]   = the same, but ignoring the single slowest constructor
+full gap [%]  = 100 * (slowest best lap - fastest best lap) / fastest
+  trimmed [%]   = the same, but ignoring the single slowest constructor
 
 The full gap answers "how wide is the grid?"
 The trimmed gap answers "how close are the cars once the one backmarker is set aside?"
@@ -13,14 +13,12 @@ three new teams entered in 2010 and left by 2017, the script reports era
 averages as well as linear fits over the whole period and over sub-periods.
 
 Data
-----
+
 Formula 1 World Championship (1950-2024), Ergast/Jolpica database, published on
 Kaggle:  https://www.kaggle.com/datasets/rohanrao/formula-1-world-championship-1950-2020
 
 Files used:  lap_times.csv, results.csv, races.csv, constructors.csv
 
-Usage
------
     python f1_gap_analysis.py --data-dir data --out-dir figures
 """
 
