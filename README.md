@@ -105,6 +105,6 @@ and 2012–2024) are printed to the terminal. The files written are:
 
 ## Report
 
-`report.tex` is the LaTeX source of the two-page report; compile it with
+`report final final.tex` is the LaTeX source of the two-page report; compile it with
 pdfLaTeX on Overleaf. It needs `gap_trend.png` in the same folder, so run the
-script first. `report.pdf` is the compiled version.
+script first. `Final_project (3).pdf` is the compiled version.
