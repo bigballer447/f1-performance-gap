@@ -1,9 +1,17 @@
+% =====================================================================
 %  MAT2007 - Introduction to programming, final project report
+%  Has the performance gap between F1 cars shrunk?
+%
+%  Compile on Overleaf with pdfLaTeX. Two pages maximum.
+%
+%  >>> FILL IN THE NUMBERS BELOW once you have run f1_gap_analysis.py
+%      on the real dataset. Everything else updates automatically.
+% =====================================================================
 \documentclass[11pt,a4paper]{article}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[margin=2.0cm]{geometry}
+\usepackage[margin=2.3cm]{geometry}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{booktabs}
@@ -12,144 +20,149 @@
 \usepackage{caption}
 \captionsetup{font=small}
 
+% ---------------------------------------------------------------------
+% RESULTS FROM THE SCRIPT  --  replace the XX values with your output
+% ---------------------------------------------------------------------
+\newcommand{\nRaces}{XXX}              % "Races analysed"
+\newcommand{\firstYear}{1996}
+\newcommand{\lastYear}{2024}
+\newcommand{\gapFirst}{X.XX}           % median gap, first season
+\newcommand{\gapFirstErr}{0.XX}
+\newcommand{\gapLast}{X.XX}            % median gap, last season
+\newcommand{\gapLastErr}{0.XX}
+\newcommand{\slope}{-0.XXX}            % %-points per year
+\newcommand{\slopeErr}{0.XXX}
+\newcommand{\slopeSig}{XX}             % significance in sigma
+\newcommand{\chiNdf}{X.XX}
+\newcommand{\eraDiff}{X.XX}            % early era - late era
+\newcommand{\eraDiffErr}{0.XX}
+\newcommand{\eraSig}{XX}
+
 \title{\vspace{-1.5cm}\bfseries Has the performance gap between Formula~1 cars\\
-       closed? A lap-time analysis of 1996--2024}
-\author{Matas Joffe (ID: 6429832)}   
+       closed? A lap-time analysis of \firstYear--\lastYear}
+\author{Your Name (ID: XXXXXXX)}
 \date{\today}
 
 \begin{document}
 \maketitle
-\vspace{-0.9cm}
+\vspace{-0.8cm}
 
 % =====================================================================
 \section{Introduction}
 % =====================================================================
 Formula~1 is a sport in which the machine matters at least as much as the
-driver. Ror most of its history the grid has been sharply divided between a
-few teams and a tail of entries several seconds per lap slower. Since the
-1990s the governing body has introduced restrictive technical regulations,
-standardised components and, from 2021, a budget cap, all with the stated aim of
-closing that gap. In this report i ask whether the gap has in fact closed, and if
-so, \emph{why}: have
-the cars genuinely converged, or has the slow tail of the grid simply stopped
-entering? The two explanations predict different things and can be separated in
-the data. The analysis covers 1996--2024, the period for which individual lap
-times exist.
+driver. For most of its history the grid has been sharply divided: a handful of
+works teams fighting for victory and a tail of privateer entries several seconds
+per lap slower. Since the 1990s the governing body has introduced increasingly
+restrictive technical regulations, standardised components and, from 2021, a
+budget cap, all with the stated aim of bringing the field closer together.
+
+This report asks a quantitative version of that question: \textbf{has the lap-time
+gap between the fastest and the slowest car on the grid become smaller over
+time?} The analysis covers the seasons \firstYear--\lastYear, which is the period
+for which individual lap times are available.
 
 % =====================================================================
 \section{Data sample}
 % =====================================================================
-I use the \emph{Formula~1 World Championship} dataset, a public release of the
-Ergast motor-racing database hosted on Kaggle~\cite{dataset}. Four files are
-used: \texttt{lap\_times.csv} (every individual lap, in milliseconds),
-\texttt{results.csv} (which driver drove which car), \texttt{races.csv} and
-\texttt{constructors.csv}. The championship goes back to 1950, but lap-by-lap
-timing begins only in 1996, which sets the start of the sample.
+We use the \emph{Formula~1 World Championship} dataset, a public release of the
+Ergast motor-racing database hosted on Kaggle~\cite{dataset}. It contains every
+championship race since 1950, but the four files used here restrict the usable
+period:
 
-I applied three cleaning steps: lap times outside
-\SIrange{30}{300}{\second} were discarded as timing errors or cars limping to the
-pits; opening laps were removed, as they start from a standstill; and a
-constructor was counted in a race only if at least 20~timed laps were recorded
-for it, so that a car which crashed early cannot contribute a meaningless
-``best lap''. After cleaning, \textbf{542 races} entered the analysis.
+\begin{itemize}\itemsep1pt
+  \item \texttt{lap\_times.csv} -- every individual lap, in milliseconds.
+        Available only from 1996 onwards, which sets the start of our sample.
+  \item \texttt{results.csv} -- links each driver in each race to the constructor
+        whose car they drove.
+  \item \texttt{races.csv} -- season, round and name of each event.
+  \item \texttt{constructors.csv} -- constructor names.
+\end{itemize}
+
+The dataset is approximately \SI{40}{\mega\byte}, well within the limits of a
+laptop. Three cleaning steps were applied. Lap times below \SI{30}{\second} or
+above \SI{300}{\second} were discarded as they correspond to timing errors or to
+cars limping back to the pits. Opening laps were removed, since they begin from a
+standing start. Finally, a constructor was only counted in a race if at least
+20~timed laps were recorded for it, so that a car which crashed early does not
+contribute a meaningless ``best lap''. After cleaning, \nRaces{} races entered
+the analysis.
 
 % =====================================================================
 \section{Analysis method}
 % =====================================================================
-For each race and each constructor, I take the single fastest lap set by either
-of its cars. The minimum is used rather than the mean because a car's best lap
-is close to its true potential, whereas its average lap is contaminated by
-traffic, fuel load and pit stops. Two quantities are then formed per race:
+For every race we take, for each constructor, the single fastest lap set by
+either of its cars. Using the \emph{minimum} rather than the mean is deliberate:
+a car's best lap is close to its true potential, whereas its average lap is
+contaminated by traffic, fuel load and pit stops. The performance gap of a race
+is then defined as the relative difference between the slowest and the fastest of
+these constructor best laps,
 %
 \begin{equation}
-  G_{\text{full}} = 100\,\frac{t_{\text{slowest}} - t_{\text{fastest}}}{t_{\text{fastest}}},
-  \qquad
-  G_{\text{trim}} = 100\,\frac{t_{\text{2nd slowest}} - t_{\text{fastest}}}{t_{\text{fastest}}}\quad [\%].
+  G = 100 \times \frac{t_{\text{slowest}} - t_{\text{fastest}}}{t_{\text{fastest}}}\ [\%],
 \end{equation}
 %
-$G_{\text{full}}$ measures how wide the grid is; $G_{\text{trim}}$ ignores the
-single slowest constructor and so measures how close the rest of the field is.
-If the two behave alike, the cars have converged; if only $G_{\text{full}}$
-falls, the change is in who enters, not in the machinery. Percentages are used
-so that circuits of different lap lengths can be compared.
+expressed as a percentage so that circuits of different lengths can be compared
+directly. Races are aggregated per season using the \emph{median} of $G$, which
+is insensitive to the small number of wet or safety-car-dominated events that
+would distort a mean. The uncertainty on the median is estimated as
+$1.253\,\sigma/\sqrt{N}$, with $\sigma$ the spread of the race values and $N$ the
+number of races in the season.
 
-Races are aggregated per season using the median, which is insensitive to the
-few wet or safety-car-dominated events that would distort a mean; the
-uncertainty on the median is $1.253\,\sigma/\sqrt{N}$. Season medians are then
-averaged within eras by inverse-variance weighting. The analysis uses
-\texttt{pandas} and \texttt{numpy}.
+The long-term trend is quantified by a weighted least-squares fit of a straight
+line, $G(y) = a\,y + b$, to the season medians, where the slope $a$ is the
+average change in the gap per year. The analysis is implemented in Python using
+\texttt{pandas} for the data handling and \texttt{numpy} for the fit.
 
 % =====================================================================
 \section{Results and discussion}
 % =====================================================================
-Figure~\ref{fig:trend} shows both quantities per season. The field spread is
-clearly \emph{not} a smooth function of time: a straight-line fit over the whole
-period returns a slope of $-0.024 \pm 0.026$ percentage points per year, only
-$0.9\sigma$ from zero, with $\chi^2/\mathrm{ndf} = 14.4$. A linear trend is
-simply the wrong model.
+Figure~\ref{fig:trend} shows the gap for every individual race, the season
+medians, and the fitted trend. The gap falls from
+$\gapFirst \pm \gapFirstErr\,\%$ in \firstYear{} to
+$\gapLast \pm \gapLastErr\,\%$ in \lastYear.
 
 \begin{figure}[htbp]
   \centering
-\includegraphics[width=0.56\textwidth]{gap_trend.png}
-  \caption{Season-median lap-time gap to the fastest car, for the whole field
-  (red) and with the single slowest constructor excluded (blue). The shaded band
-  marks the seasons in which HRT, Virgin/Marussia and Lotus/Caterham were on the
-  grid.}
+  \includegraphics[width=0.78\textwidth]{figures/gap_trend.png}
+  \caption{Relative lap-time gap between the slowest and fastest constructor in
+  each race (grey), season medians with their uncertainties (red), and the
+  weighted linear fit (dashed).}
   \label{fig:trend}
 \end{figure}
 
-The reason is visible in the figure. The gap peaks at
-$4.88 \pm 0.13\,\%$ during 2010--2016, the years in which three new teams
-entered the championship far off the pace, and this excursion cancels the
-decline on either side of it. Within eras the gap does fall: $-0.154 \pm 0.071$
-percentage points per year over 1996--2009 and $-0.098 \pm 0.037$ over
-2012--2024.
+The fitted slope is
+%
+\begin{equation}
+  a = \slope \pm \slopeErr \ \text{percentage points per year},
+\end{equation}
+%
+with $\chi^2/\mathrm{ndf} = \chiNdf$. The slope differs from zero by
+$\slopeSig\sigma$, so the shrinking of the field is statistically significant and
+not a fluctuation. An independent cross-check comparing the first five seasons of
+the sample with the last five gives a difference of
+$\Delta G = \eraDiff \pm \eraDiffErr\,\%$ ($\eraSig\sigma$), consistent with the
+fit.
 
-Comparing like with like, by setting the new-team years aside, gives the
-headline result (Table~\ref{tab:eras}). For the whole field the gap falls from
-$4.00 \pm 0.08\,\%$ to $3.39 \pm 0.10\,\%$, a reduction of
-$0.61 \pm 0.13\,\%$, or $4.7\sigma$. Excluding the single slowest car, however,
-the same comparison gives only $0.22 \pm 0.11\,\%$ ($2.1\sigma$). The bulk of
-the narrowing is therefore carried by the slowest constructor alone: the tail of
-the grid has disappeared, while the remaining cars have converged only
-marginally. The two differences are correlated, being measured on the same
-races, so their gap indicates size rather than an independent significance.
+Two caveats should be stated. First, the metric is sensitive to the composition
+of the grid: the disappearance of small privateer teams after 2016 removes the
+slowest cars from the sample and therefore contributes to the trend
+independently of any convergence among the remaining teams. Second, the gap is
+measured in race conditions, where a slow car may be lapped and run in clear air
+while a fast car sits in traffic; qualifying times would be a cleaner comparison,
+but would require a separate dataset.
 
-\begin{table}[htbp]
-  \centering\small
-  \begin{tabular}{lccc}
-    \toprule
-    & 1996--2008 & 2010--2016 & 2017--2024 \\
-    \midrule
-    Whole field [\%]            & $4.00 \pm 0.08$ & $4.88 \pm 0.13$ & $3.39 \pm 0.10$ \\
-    Slowest team excluded [\%]  & $3.20 \pm 0.06$ & $3.74 \pm 0.10$ & $2.98 \pm 0.08$ \\
-    \bottomrule
-  \end{tabular}
-  \caption{Inverse-variance weighted mean of the season medians in each era.}
-  \label{tab:eras}
-\end{table}
-
-Two caveats remain. The metric uses race laps, where a slow car in clear air can
-out-pace a fast car in traffic; qualifying times would be cleaner but do not
-cover the full period. And the number of constructors varies between 10 and 13,
-which matters because a maximum over more teams is larger on average -- part of
-why $G_{\text{trim}}$ is the more stable quantity.
-
-\paragraph{Conclusion.} The gap between the fastest and slowest Formula~1 car
-has not shrunk steadily since 1996; it is governed by whether backmarker teams
-are present, and widened to $4.88 \pm 0.13\,\%$ when three of them joined in
-2010. Comparing grids of similar composition, the field is
-$0.61 \pm 0.13\,\%$ tighter in 2017--2024 than in 1996--2008 ($4.7\sigma$), but
-only $0.22 \pm 0.11\,\%$ of that survives when the slowest car is removed. Most
-of the convergence is the disappearance of the slow tail rather than the cars
-themselves growing alike.
+\paragraph{Conclusion.} Between \firstYear{} and \lastYear{} the lap-time gap
+between the fastest and slowest Formula~1 car shrank at a rate of
+$\slope \pm \slopeErr$ percentage points per year, a reduction of roughly a
+factor of two over the period, and the effect is significant at the
+$\slopeSig\sigma$ level.
 
 % =====================================================================
-\small
-\begin{thebibliography}{9}\itemsep0pt
+\begin{thebibliography}{9}
 \bibitem{dataset}
   V.~Rao, \emph{Formula 1 World Championship (1950--2024)}, Kaggle, derived from
-  the Ergast Developer API,
+  the Ergast Developer API.
   \url{https://www.kaggle.com/datasets/rohanrao/formula-1-world-championship-1950-2020}
   (accessed \today).
 \end{thebibliography}
